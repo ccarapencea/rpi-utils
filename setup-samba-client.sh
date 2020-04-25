@@ -25,7 +25,9 @@ if ! grep -q "^[[:space:]]*//${CONFIG_SAMBA_CLIENT_SHARE}[[:space:]]" "${FSTAB}"
     sudo cp "${FSTAB}" "${FSTAB}.${TIME}.${TIMESTAMP}.bak"
     echo "//${CONFIG_SAMBA_CLIENT_SHARE}  ${MOUNT_DIR}  cifs  credentials=${CREDENTIALS_FILE},vers=1.0  0  0" | sudo tee -a "${FSTAB}"
 fi
+
 sudo mount -av
+echo "* * * * * root ${SCRIPT_DIR}/watch-samba-mount.sh" | sudo tee "/etc/cron.d/samba-crontab"
 
 echo "Creating Samba Media link..."
 LINK="${CONFIG_MEDIA_DIR}/${CONFIG_SAMBA_CLIENT_LINK_NAME}"
