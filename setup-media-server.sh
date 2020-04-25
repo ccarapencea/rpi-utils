@@ -104,4 +104,24 @@ if [[ -f "${TRANSMISSION_CUSTOM_SETTINGS}" ]]; then
     sudo cp "${TRANSMISSION_CUSTOM_SETTINGS}" "${TRANSMISSION_SETTINGS}"
 fi
 
+if [[ ${CONFIG_TORRENT_CHANGE_USER} == true ]]; then
+    TRANSMISSION_FILE="/etc/init.d/transmission-daemon"
+    sudo cp "${TRANSMISSION_FILE}" "${TRANSMISSION_FILE}.${TIME}.${TIMESTAMP}.bak"
+    TRANSMISSION_PATTERN="^[[:space:]]*USER=.*"
+    TRANSMISSION_REPLACEMENT="USER=${USER_NAME}"
+    sudo sed -i -r "s/${TRANSMISSION_PATTERN}/${TRANSMISSION_REPLACEMENT}/g" ${TRANSMISSION_FILE}
+
+    TRANSMISSION_FILE="/etc/systemd/system/multi-user.target.wants/transmission-daemon.service"
+    sudo cp "${TRANSMISSION_FILE}" "${TRANSMISSION_FILE}.${TIME}.${TIMESTAMP}.bak"
+    TRANSMISSION_PATTERN="^[[:space:]]*User=.*"
+    TRANSMISSION_REPLACEMENT="User=${USER_NAME}"
+    sudo sed -i -r "s/${TRANSMISSION_PATTERN}/${TRANSMISSION_REPLACEMENT}/g" ${TRANSMISSION_FILE}
+fi
+
+sudo systemctl daemon-reload
+sudo usermod -a -G debian-transmission "${USER_NAME}"
+sudo chown -R "${USER_NAME}:debian-transmission" /etc/transmission-daemon
+sudo mkdir -p /home/pi/.config/transmission-daemon/
+sudo ln -sf "/etc/transmission-daemon/settings.json" "/home/${USER_NAME}/.config/transmission-daemon/"
+sudo chown -R "${USER_NAME}:debian-transmission" "/home/${USER_NAME}/.config/transmission-daemon/"
 sudo systemctl restart transmission-daemon
