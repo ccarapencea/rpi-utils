@@ -16,14 +16,13 @@ echo "username=${CONFIG_SAMBA_CLIENT_USER}" >> ${CREDENTIALS_FILE}
 echo "password=${CONFIG_SAMBA_CLIENT_PASSWORD}" >> ${CREDENTIALS_FILE}
 
 echo "Creating the Samba mount directories..."
-MOUNT_DIR="/mnt/${CONFIG_SAMBA_CLIENT_SHARE}"
-sudo mkdir -p "${MOUNT_DIR}"
+sudo mkdir -p "${CONFIG_SAMBA_CLIENT_MOUNT}"
 
 FSTAB="/etc/fstab"
 if ! grep -q "^[[:space:]]*//${CONFIG_SAMBA_CLIENT_SHARE}[[:space:]]" "${FSTAB}"; then
     echo "Configuring the CIFS auto-mount..."
     sudo cp "${FSTAB}" "${FSTAB}.${TIME}.${TIMESTAMP}.bak"
-    echo "//${CONFIG_SAMBA_CLIENT_SHARE}  ${MOUNT_DIR}  cifs  credentials=${CREDENTIALS_FILE},vers=1.0  0  0" | sudo tee -a "${FSTAB}"
+    echo "//${CONFIG_SAMBA_CLIENT_SHARE}  ${CONFIG_SAMBA_CLIENT_MOUNT}  cifs  credentials=${CREDENTIALS_FILE},vers=1.0  0  0" | sudo tee -a "${FSTAB}"
 fi
 
 sudo mount -av
@@ -31,4 +30,4 @@ echo "* * * * * root ${SCRIPT_DIR}/watch-samba-mount.sh" | sudo tee "/etc/cron.d
 
 echo "Creating Samba Media link..."
 LINK="${CONFIG_MEDIA_DIR}/${CONFIG_SAMBA_CLIENT_LINK_NAME}"
-ln -sfn "${MOUNT_DIR}${CONFIG_SAMBA_CLIENT_LINK_PATH}" "${LINK}"
+ln -sfn "${CONFIG_SAMBA_CLIENT_LINK_PATH}" "${LINK}"

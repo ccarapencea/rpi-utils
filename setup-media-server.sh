@@ -18,13 +18,19 @@ fi
 
 echo "Installing packages..."
 sudo apt install \
+    acl \
+    iotop \
     xrdp \
     samba \
     samba-common-bin \
     smbclient \
     cifs-utils \
-    minidlna \
-    transmission-daemon \
+
+
+echo "Setting permissions..."
+sudo chmod a+rx "/media"
+sudo chmod a+rx "/media/${USER_NAME}"
+sudo chmod a+rwx "${CONFIG_MEDIA_EXT_MOUNT}"
 
 
 echo "Setting up media directories..."
@@ -35,7 +41,7 @@ fi
 if [[ -v CONFIG_MEDIA_NTFS_MOUNT ]]; then
     ln -sfn "${CONFIG_MEDIA_NTFS_MOUNT}" "${CONFIG_MEDIA_DIR}/data-ntfs"
 fi
-if [[ -v CONFIG_SAMBA_CLIENT_SHARE ]]; then
+if [[ -v CONFIG_SAMBA_CLIENT_MOUNT ]]; then
     "${SCRIPT_DIR}/setup-samba-client.sh"
 fi
 
@@ -60,68 +66,20 @@ printf "${CONFIG_SAMBA_SERVER_PASSWORD}\n${CONFIG_SAMBA_SERVER_PASSWORD}\n" | su
 sudo systemctl restart smbd
 
 
-echo "Configuring MiniDLNA..."
-MINIDLNA_CONF="/etc/minidlna.conf"
-sudo cp "${MINIDLNA_CONF}" "${MINIDLNA_CONF}.${TIME}.${TIMESTAMP}.bak"
-
-MINIDLNA_PATTERN=".*wide_links=.*"
-MINIDLNA_REPLACEMENT="wide_links=yes"
-sudo sed -i -r "s/${MINIDLNA_PATTERN}/${MINIDLNA_REPLACEMENT}/g" ${MINIDLNA_CONF}
-
-if [[ ${CONFIG_DLNA_MERGE_DIRS} == true ]]; then
-    MINIDLNA_PATTERN=".*merge_media_dirs=.*"
-    MINIDLNA_REPLACEMENT="merge_media_dirs=yes"
-    sudo sed -i -r "s/${MINIDLNA_PATTERN}/${MINIDLNA_REPLACEMENT}/g" ${MINIDLNA_CONF}
+if [[ ${CONFIG_PLEX} == true ]]; then
+    echo "Setting up Plex..."
+    "${SCRIPT_DIR}/setup-plex.sh"
 fi
 
-sudo sed -i -r "/^[[:space:]]*media_dir=/d" ${MINIDLNA_CONF}
-for DIR in "${CONFIG_DLNA_VIDEO_DIRS[@]}"; do
-    if ! grep -q "^[[:space:]]*media_dir=V,${DIR}[[:space:]]*" ${MINIDLNA_CONF}; then
-        echo "media_dir=V,${DIR}" | sudo tee -a ${MINIDLNA_CONF}
-    fi
-done
-for DIR in "${CONFIG_DLNA_AUDIO_DIRS[@]}"; do
-    if ! grep -q "^[[:space:]]*media_dir=A,${DIR}[[:space:]]*" ${MINIDLNA_CONF}; then
-        echo "media_dir=A,${DIR}" | sudo tee -a ${MINIDLNA_CONF}
-    fi
-done
-for DIR in "${CONFIG_DLNA_PICTURE_DIRS[@]}"; do
-    if ! grep -q "^[[:space:]]*media_dir=P,${DIR}[[:space:]]*" ${MINIDLNA_CONF}; then
-        echo "media_dir=P,${DIR}" | sudo tee -a ${MINIDLNA_CONF}
-    fi
-done
-
-sudo systemctl restart minidlna
-
-
-echo "Configuring Transmission..."
-sudo systemctl stop transmission-daemon
-
-TRANSMISSION_CUSTOM_SETTINGS="${SCRIPT_DIR}/files/transmission/settings.json"
-if [[ -f "${TRANSMISSION_CUSTOM_SETTINGS}" ]]; then
-    TRANSMISSION_SETTINGS="/etc/transmission-daemon/settings.json"
-    sudo mv "${TRANSMISSION_SETTINGS}" "${TRANSMISSION_SETTINGS}.${TIME}.${TIMESTAMP}.bak"
-    sudo cp "${TRANSMISSION_CUSTOM_SETTINGS}" "${TRANSMISSION_SETTINGS}"
+if [[ ${CONFIG_DLNA} == true ]]; then
+    echo "Setting up Minidlna..."
+    "${SCRIPT_DIR}/setup-minidlna.sh"
 fi
 
-if [[ ${CONFIG_TORRENT_CHANGE_USER} == true ]]; then
-    TRANSMISSION_FILE="/etc/init.d/transmission-daemon"
-    sudo cp "${TRANSMISSION_FILE}" "${TRANSMISSION_FILE}.${TIME}.${TIMESTAMP}.bak"
-    TRANSMISSION_PATTERN="^[[:space:]]*USER=.*"
-    TRANSMISSION_REPLACEMENT="USER=${USER_NAME}"
-    sudo sed -i -r "s/${TRANSMISSION_PATTERN}/${TRANSMISSION_REPLACEMENT}/g" ${TRANSMISSION_FILE}
-
-    TRANSMISSION_FILE="/etc/systemd/system/multi-user.target.wants/transmission-daemon.service"
-    sudo cp "${TRANSMISSION_FILE}" "${TRANSMISSION_FILE}.${TIME}.${TIMESTAMP}.bak"
-    TRANSMISSION_PATTERN="^[[:space:]]*User=.*"
-    TRANSMISSION_REPLACEMENT="User=${USER_NAME}"
-    sudo sed -i -r "s/${TRANSMISSION_PATTERN}/${TRANSMISSION_REPLACEMENT}/g" ${TRANSMISSION_FILE}
+if [[ ${CONFIG_TORRENT} == true ]]; then
+    echo "Setting up Transmission..."
+    "${SCRIPT_DIR}/setup-transmission.sh"
 fi
 
-sudo systemctl daemon-reload
-sudo usermod -a -G debian-transmission "${USER_NAME}"
-sudo chown -R "${USER_NAME}:debian-transmission" /etc/transmission-daemon
-sudo mkdir -p /home/pi/.config/transmission-daemon/
-sudo ln -sf "/etc/transmission-daemon/settings.json" "/home/${USER_NAME}/.config/transmission-daemon/"
-sudo chown -R "${USER_NAME}:debian-transmission" "/home/${USER_NAME}/.config/transmission-daemon/"
-sudo systemctl restart transmission-daemon
+
+echo "@reboot root ${SCRIPT_DIR}/media-usb-reload.sh" | sudo tee "/etc/cron.d/usb-crontab"
