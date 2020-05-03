@@ -2,7 +2,7 @@
 
 SCRIPT=$(readlink -f "${0}")
 SCRIPT_DIR=$(dirname "${SCRIPT}")
-USER_NAME=$(whoami)
+USER_NAME=pi
 source "${SCRIPT_DIR}/config.cfg"
 
 

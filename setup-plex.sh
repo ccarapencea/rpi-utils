@@ -27,5 +27,4 @@ fi
 
 
 echo "Installing packages..."
-sudo apt update
 sudo apt install plexmediaserver
