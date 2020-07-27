@@ -53,11 +53,30 @@ if ! grep -q "^[[:space:]]*\[${CONFIG_SAMBA_SERVER_SHARE}\][[:space:]]*$" "${SMB
 
     echo | sudo tee -a "${SMB_CONF}"
     echo "[${CONFIG_SAMBA_SERVER_SHARE}]" | sudo tee -a "${SMB_CONF}"
-    echo "path = /${CONFIG_MEDIA_DIR}" | sudo tee -a "${SMB_CONF}"
+    echo "path = ${CONFIG_MEDIA_DIR}" | sudo tee -a "${SMB_CONF}"
     echo "writeable = yes" | sudo tee -a "${SMB_CONF}"
     echo "create mask = 0777" | sudo tee -a "${SMB_CONF}"
     echo "directory mask = 0777" | sudo tee -a "${SMB_CONF}"
     echo "public = no" | sudo tee -a "${SMB_CONF}"
+    echo "force user = pi" | sudo tee -a "${SMB_CONF}"
+
+    echo | sudo tee -a "${SMB_CONF}"
+    echo "[ext]" | sudo tee -a "${SMB_CONF}"
+    echo "path = ${CONFIG_MEDIA_EXT_MOUNT}" | sudo tee -a "${SMB_CONF}"
+    echo "writeable = yes" | sudo tee -a "${SMB_CONF}"
+    echo "create mask = 0777" | sudo tee -a "${SMB_CONF}"
+    echo "directory mask = 0777" | sudo tee -a "${SMB_CONF}"
+    echo "public = no" | sudo tee -a "${SMB_CONF}"
+    echo "force user = pi" | sudo tee -a "${SMB_CONF}"
+    echo | sudo tee -a "${SMB_CONF}"
+
+    echo "[ntfs]" | sudo tee -a "${SMB_CONF}"
+    echo "path = ${CONFIG_MEDIA_EXT_MOUNT}" | sudo tee -a "${SMB_CONF}"
+    echo "writeable = yes" | sudo tee -a "${SMB_CONF}"
+    echo "create mask = 0777" | sudo tee -a "${SMB_CONF}"
+    echo "directory mask = 0777" | sudo tee -a "${SMB_CONF}"
+    echo "public = no" | sudo tee -a "${SMB_CONF}"
+    echo "force user = pi" | sudo tee -a "${SMB_CONF}"
 fi
 
 
