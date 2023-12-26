@@ -17,6 +17,7 @@ fi
 if [[ -v CONFIG_MEDIA_NTFS_MOUNT ]]; then
     while [[ ! -d ${CONFIG_MEDIA_NTFS_MOUNT} ]]; do
         sleep 2
+        ls ${CONFIG_MEDIA_NTFS_MOUNT}
     done
 fi
 
@@ -29,6 +30,6 @@ if [[ ${CONFIG_DLNA} == true ]]; then
 fi
 
 if [[ ${CONFIG_TORRENT} == true ]]; then
-    logger "Reloading Transmission..."
-    systemctl restart transmission-daemon
+    logger "Reloading qBittorrent..."
+    systemctl restart qbittorrent
 fi

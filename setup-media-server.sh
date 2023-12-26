@@ -60,23 +60,27 @@ if ! grep -q "^[[:space:]]*\[${CONFIG_SAMBA_SERVER_SHARE}\][[:space:]]*$" "${SMB
     echo "public = no" | sudo tee -a "${SMB_CONF}"
     echo "force user = pi" | sudo tee -a "${SMB_CONF}"
 
-    echo | sudo tee -a "${SMB_CONF}"
-    echo "[ext]" | sudo tee -a "${SMB_CONF}"
-    echo "path = ${CONFIG_MEDIA_EXT_MOUNT}" | sudo tee -a "${SMB_CONF}"
-    echo "writeable = yes" | sudo tee -a "${SMB_CONF}"
-    echo "create mask = 0777" | sudo tee -a "${SMB_CONF}"
-    echo "directory mask = 0777" | sudo tee -a "${SMB_CONF}"
-    echo "public = no" | sudo tee -a "${SMB_CONF}"
-    echo "force user = pi" | sudo tee -a "${SMB_CONF}"
-    echo | sudo tee -a "${SMB_CONF}"
+    if [[ -v CONFIG_MEDIA_EXT_MOUNT ]]; then
+        echo | sudo tee -a "${SMB_CONF}"
+        echo "[ext]" | sudo tee -a "${SMB_CONF}"
+        echo "path = ${CONFIG_MEDIA_EXT_MOUNT}" | sudo tee -a "${SMB_CONF}"
+        echo "writeable = yes" | sudo tee -a "${SMB_CONF}"
+        echo "create mask = 0777" | sudo tee -a "${SMB_CONF}"
+        echo "directory mask = 0777" | sudo tee -a "${SMB_CONF}"
+        echo "public = no" | sudo tee -a "${SMB_CONF}"
+        echo "force user = pi" | sudo tee -a "${SMB_CONF}"
+        echo | sudo tee -a "${SMB_CONF}"
+    fi
 
-    echo "[ntfs]" | sudo tee -a "${SMB_CONF}"
-    echo "path = ${CONFIG_MEDIA_EXT_MOUNT}" | sudo tee -a "${SMB_CONF}"
-    echo "writeable = yes" | sudo tee -a "${SMB_CONF}"
-    echo "create mask = 0777" | sudo tee -a "${SMB_CONF}"
-    echo "directory mask = 0777" | sudo tee -a "${SMB_CONF}"
-    echo "public = no" | sudo tee -a "${SMB_CONF}"
-    echo "force user = pi" | sudo tee -a "${SMB_CONF}"
+    if [[ -v CONFIG_MEDIA_NTFS_MOUNT ]]; then
+        echo "[ntfs]" | sudo tee -a "${SMB_CONF}"
+        echo "path = ${CONFIG_MEDIA_NTFS_MOUNT}" | sudo tee -a "${SMB_CONF}"
+        echo "writeable = yes" | sudo tee -a "${SMB_CONF}"
+        echo "create mask = 0777" | sudo tee -a "${SMB_CONF}"
+        echo "directory mask = 0777" | sudo tee -a "${SMB_CONF}"
+        echo "public = no" | sudo tee -a "${SMB_CONF}"
+        echo "force user = pi" | sudo tee -a "${SMB_CONF}"
+    fi
 fi
 
 
@@ -96,9 +100,14 @@ if [[ ${CONFIG_DLNA} == true ]]; then
 fi
 
 if [[ ${CONFIG_TORRENT} == true ]]; then
-    echo "Setting up Transmission..."
-    "${SCRIPT_DIR}/setup-transmission.sh"
+    echo "Setting up qBittorrent..."
+    "${SCRIPT_DIR}/setup-qbittorrent.sh"
 fi
 
+SSL_CRONTAB="/etc/cron.d/copy-ssl-crontab"
+echo '@reboot'" root ${SCRIPT_DIR}/copy-ssl-certificate.sh" | sudo tee "${SSL_CRONTAB}"
+echo '*/10 * * * *'" root ${SCRIPT_DIR}/copy-ssl-certificate.sh" | sudo tee -a "${SSL_CRONTAB}"
 
-echo "@reboot root ${SCRIPT_DIR}/media-usb-reload.sh" | sudo tee "/etc/cron.d/usb-crontab"
+# echo "@reboot root ${SCRIPT_DIR}/media-usb-reload.sh" | sudo tee "/etc/cron.d/usb-crontab"
+
+sudo systemctl restart cron
